@@ -1,0 +1,93 @@
+LIBRARY IEEE;
+USE IEEE.STD_LOGIC_1164.ALL;
+
+ENTITY TB_BCD_COUNTER100 IS
+END ENTITY TB_BCD_COUNTER100;
+
+ARCHITECTURE BEHAVIOR OF TB_BCD_COUNTER100 IS
+
+  -- Component Declaration
+  COMPONENT BCD_COUNTER100
+    PORT (
+      CLK       : IN  STD_LOGIC;
+      RESET     : IN  STD_LOGIC;
+      ENABLE    : IN  STD_LOGIC;
+      LOAD      : IN  STD_LOGIC;
+      D_UNIDADE : IN  STD_LOGIC_VECTOR(3 DOWNTO 0);
+      D_DEZENA  : IN  STD_LOGIC_VECTOR(3 DOWNTO 0);
+      Q_UNIDADE : OUT STD_LOGIC_VECTOR(3 DOWNTO 0);
+      Q_DEZENA  : OUT STD_LOGIC_VECTOR(3 DOWNTO 0)
+    );
+  END COMPONENT;
+
+  -- Signals
+  SIGNAL CLK_TB        : STD_LOGIC := '0';
+  SIGNAL RESET_TB      : STD_LOGIC := '0';
+  SIGNAL ENABLE_TB     : STD_LOGIC := '1';  -- INIBE CONTAGEM
+  SIGNAL LOAD_TB       : STD_LOGIC := '0';
+  SIGNAL D_UNIDADE_TB  : STD_LOGIC_VECTOR(3 DOWNTO 0) := (OTHERS => '0');
+  SIGNAL D_DEZENA_TB   : STD_LOGIC_VECTOR(3 DOWNTO 0) := (OTHERS => '0');
+  SIGNAL Q_UNIDADE_TB  : STD_LOGIC_VECTOR(3 DOWNTO 0);
+  SIGNAL Q_DEZENA_TB   : STD_LOGIC_VECTOR(3 DOWNTO 0);
+
+  CONSTANT CLK_PERIOD : TIME := 10 NS;
+
+BEGIN
+
+  -- Instância do UUT
+  UUT: BCD_COUNTER100
+    PORT MAP (
+      CLK       => CLK_TB,
+      RESET     => RESET_TB,
+      ENABLE    => ENABLE_TB,
+      LOAD      => LOAD_TB,
+      D_UNIDADE => D_UNIDADE_TB,
+      D_DEZENA  => D_DEZENA_TB,
+      Q_UNIDADE => Q_UNIDADE_TB,
+      Q_DEZENA  => Q_DEZENA_TB
+    );
+
+  -- Geração de Clock
+  CLK_PROC: PROCESS
+  BEGIN
+    LOOP
+      CLK_TB <= '0';
+      WAIT FOR CLK_PERIOD/2;
+      CLK_TB <= '1';
+      WAIT FOR CLK_PERIOD/2;
+    END LOOP;
+  END PROCESS CLK_PROC;
+
+  -- Stimulus
+  STIM_PROC: PROCESS
+  BEGIN
+    -- Reset Síncrono
+    RESET_TB <= '1';
+    WAIT FOR CLK_PERIOD;
+    RESET_TB <= '0';
+    WAIT FOR CLK_PERIOD;
+
+    -- Teste de Load Paralelo
+    D_UNIDADE_TB <= "0000";  -- UNIDADE = 0
+    D_DEZENA_TB  <= "0000";  -- DEZENA  = 0
+    LOAD_TB      <= '1';
+    WAIT FOR CLK_PERIOD;
+    LOAD_TB      <= '0';
+    WAIT FOR CLK_PERIOD;
+
+    -- Habilita Contagem
+    ENABLE_TB <= '0';
+
+    -- Conta 26 ciclos para observar cascata
+    FOR I IN 0 TO 25 LOOP
+      WAIT FOR CLK_PERIOD;
+    END LOOP;
+
+    -- Desabilita Contagem
+    ENABLE_TB <= '1';
+
+    WAIT FOR 5 * CLK_PERIOD;
+    WAIT;  -- Fim da simulação
+  END PROCESS STIM_PROC;
+
+END ARCHITECTURE BEHAVIOR;
